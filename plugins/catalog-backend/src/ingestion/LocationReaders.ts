@@ -29,15 +29,16 @@ import { AnnotateLocationEntityProcessor } from './processors/AnnotateLocationEn
 import { ApiDefinitionAtLocationProcessor } from './processors/ApiDefinitionAtLocationProcessor';
 import { AzureApiReaderProcessor } from './processors/AzureApiReaderProcessor';
 import { BitbucketApiReaderProcessor } from './processors/BitbucketApiReaderProcessor';
+import { CodeOwnersProcessor } from './processors/CodeOwnersProcessor';
 import { EntityPolicyProcessor } from './processors/EntityPolicyProcessor';
 import { FileReaderProcessor } from './processors/FileReaderProcessor';
 import { GithubOrgReaderProcessor } from './processors/GithubOrgReaderProcessor';
 import { GithubReaderProcessor } from './processors/GithubReaderProcessor';
 import { GitlabApiReaderProcessor } from './processors/GitlabApiReaderProcessor';
 import { GitlabReaderProcessor } from './processors/GitlabReaderProcessor';
+import { LdapOrgReaderProcessor } from './processors/LdapOrgReaderProcessor';
 import { LocationRefProcessor } from './processors/LocationEntityProcessor';
 import { PlaceholderProcessor } from './processors/PlaceholderProcessor';
-import { CodeOwnersProcessor } from './processors/CodeOwnersProcessor';
 import * as result from './processors/results';
 import { StaticLocationProcessor } from './processors/StaticLocationProcessor';
 import {
@@ -88,7 +89,8 @@ export class LocationReaders implements LocationReader {
       new GitlabReaderProcessor(),
       new BitbucketApiReaderProcessor(config),
       new AzureApiReaderProcessor(config),
-      GithubOrgReaderProcessor.fromConfig(config),
+      GithubOrgReaderProcessor.fromConfig(config, logger),
+      LdapOrgReaderProcessor.fromConfig(config, logger),
       new UrlReaderProcessor(),
       new YamlProcessor(),
       PlaceholderProcessor.default(),
@@ -166,10 +168,6 @@ export class LocationReaders implements LocationReader {
     item: LocationProcessorLocationResult,
     emit: LocationProcessorEmit,
   ) {
-    this.logger.debug(
-      `Reading location ${item.location.type} ${item.location.target} optional=${item.optional}`,
-    );
-
     for (const processor of this.processors) {
       if (processor.readLocation) {
         try {
@@ -195,10 +193,6 @@ export class LocationReaders implements LocationReader {
     item: LocationProcessorDataResult,
     emit: LocationProcessorEmit,
   ) {
-    this.logger.debug(
-      `Parsing data from location ${item.location.type} ${item.location.target} (${item.data.byteLength} bytes)`,
-    );
-
     for (const processor of this.processors) {
       if (processor.parseData) {
         try {
@@ -221,10 +215,6 @@ export class LocationReaders implements LocationReader {
     item: LocationProcessorEntityResult,
     emit: LocationProcessorEmit,
   ): Promise<Entity> {
-    this.logger.debug(
-      `Got entity at location ${item.location.type} ${item.location.target}, ${item.entity.apiVersion} ${item.entity.kind}`,
-    );
-
     let current = item.entity;
 
     for (const processor of this.processors) {
